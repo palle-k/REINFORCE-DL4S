@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
     name: "Reinforce",
     platforms: [
-        .macOS(.v10_12), .iOS(.v11), .tvOS(.v11)
+        .macOS(.v10_15), .iOS(.v13), .tvOS(.v13)
     ],
     dependencies: [
         // Dependencies declare other packages that this package depends on.

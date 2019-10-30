@@ -36,8 +36,8 @@ protocol Distribution {
 struct Categorical<E: NumericType, Device: DeviceType>: Distribution {
     typealias Element = Int
     
-    let densities: Tensor<E, Device>
-    let cumulative: Tensor<E, Device>
+    var densities: Tensor<E, Device>
+    var cumulative: Tensor<E, Device>
     
     init(densities: Tensor<E, Device>) {
         self.densities = densities

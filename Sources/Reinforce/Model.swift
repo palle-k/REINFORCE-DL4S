@@ -27,20 +27,20 @@ import Foundation
 import DL4S
 
 
-func PolicyModel(width: Int, height: Int) -> Sequential<Float, CPU> {
-    Sequential<Float, CPU>(
-        Flatten().asAny(),
-        Dense(inputFeatures: width * height * 2, outputFeatures: width * height).asAny(),
-        Relu().asAny(),
-        Dense(inputFeatures: width * height, outputFeatures: 4).asAny(),
-        Softmax().asAny()
-    )
+func PolicyModel(width: Int, height: Int) -> Sequential<Sequential<Sequential<Flatten<Float, CPU>, Dense<Float, CPU>>, Relu<Float, CPU>>, Sequential<Dense<Float, CPU>, Softmax<Float, CPU>>> {
+    return Sequential {
+        Flatten<Float, CPU>()
+        Dense<Float, CPU>(inputSize: width * height * 2, outputSize: 32)
+        Relu<Float, CPU>()
+        Dense<Float, CPU>(inputSize: 32, outputSize: 4)
+        Softmax<Float, CPU>()
+    }
 }
 
 func encode<E, D>(location: (Int, Int), world: World) -> Tensor<E, D> {
     let (x, y) = location
     //return Tensor([E(x) / E(world.width), E(y) / E(world.height)])
-    let t = Tensor<E, D>(repeating: 0, shape: 2, world.height, world.width)
+    var t = Tensor<E, D>(repeating: 0, shape: [2, world.height, world.width])
     
     for y in 0 ..< world.height {
         for x in 0 ..< world.width {

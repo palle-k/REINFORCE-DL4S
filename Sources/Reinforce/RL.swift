@@ -27,9 +27,9 @@ import Foundation
 import DL4S
 
 
-func step<L: Layer>(state: State, model: L, explore: Double) -> (State, Tensor<L.Element, L.Device>, L.Element) {
-    let x: Tensor<L.Input, L.Device> = encode(location: state.agentPosition, world: state.world)
-    let y = model.forward(x.view(as: 1, -1)).view(as: -1)
+func step<L: LayerType>(state: State, model: L, explore: Double) -> (State, Tensor<L.Parameter, L.Device>, L.Parameter) where L.Inputs == Tensor<L.Parameter, L.Device>, L.Outputs == Tensor<L.Parameter, L.Device> {
+    let x: Tensor<L.Parameter, L.Device> = encode(location: state.agentPosition, world: state.world)
+    let y = model.callAsFunction(x.view(as: [1, -1])).view(as: -1)
     let distribution = Categorical(densities: y)
     
     let a: Int
@@ -44,11 +44,11 @@ func step<L: Layer>(state: State, model: L, explore: Double) -> (State, Tensor<L
     let reward = state.reward(for: action)
     let newState = state.next(applying: action)
     
-    return (newState, distribution.logProb(a), L.Element(reward))
+    return (newState, distribution.logProb(a), L.Parameter(reward))
 }
 
-func run<L: Layer>(model: L, from initialState: State, decay: L.Element = 0.95, maxSteps: Int = 100, explore: Double = 0.1) -> ([State], Tensor<L.Element, L.Device>) {
-    var results: [(State, Tensor<L.Element, L.Device>, L.Element)] = []
+func run<L: LayerType>(model: L, from initialState: State, decay: L.Parameter = 0.95, maxSteps: Int = 100, explore: Double = 0.1) -> ([State], Tensor<L.Parameter, L.Device>) where L.Inputs == Tensor<L.Parameter, L.Device>, L.Outputs == Tensor<L.Parameter, L.Device> {
+    var results: [(State, Tensor<L.Parameter, L.Device>, L.Parameter)] = []
     var state = initialState
     
     for _ in 0 ..< maxSteps {
@@ -60,13 +60,13 @@ func run<L: Layer>(model: L, from initialState: State, decay: L.Element = 0.95, 
         state = n
     }
     
-    var reward: L.Element = 0
-    var totalLoss: Tensor<L.Element, L.Device> = 0
+    var reward: L.Parameter = 0
+    var totalLoss: Tensor<L.Parameter, L.Device> = 0
     for (_, lp, r) in results.reversed() {
         reward = r + reward * decay
         totalLoss += -lp * Tensor(reward)
     }
     
-    return (results.map {$0.0}, totalLoss / Tensor(L.Element(maxSteps)))
+    return (results.map {$0.0}, totalLoss / Tensor(L.Parameter(maxSteps)))
 }
 

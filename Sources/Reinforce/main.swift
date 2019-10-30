@@ -26,14 +26,14 @@
 import DL4S
 import Foundation
 
-let epochs = 100_000
+let epochs = 30_000
 let iterations = 100
-let width = 20
+let width = 10
 let height = 10
 let obstacleCount = 10
 
 let model = PolicyModel(width: width, height: height)
-let optimizer = Momentum(parameters: model.trainableParameters, learningRate: 0.001, momentum: 0.8)
+var optimizer = Adam(model: model, learningRate: 0.0003)
 
 var finishCount = 0
 var completeCount = 0
@@ -41,7 +41,6 @@ var lossSum: Float = 0
 var avgPathLen: Float = 0
 
 for epoch in 1 ... epochs {
-    optimizer.zeroGradient()
     
     let obstacles = (0 ..< obstacleCount).map { _ in
         (Int.random(in: 0 ..< width), Int.random(in: 0 ..< height))
@@ -50,9 +49,10 @@ for epoch in 1 ... epochs {
     let world = World(width: width, height: height, exit: (0, 0), obstacles: obstacles)
     
     let initialState = State(world: world, agentPosition: (Int.random(in: 0 ..< world.width), Int.random(in: 0 ..< world.height)))
-    let (stateSequence, loss) = run(model: model, from: initialState, decay: 0.9, maxSteps: 100, explore: 0.1)
-    loss.backwards()
-    optimizer.step()
+    let (stateSequence, loss) = run(model: optimizer.model, from: initialState, decay: 0.9, maxSteps: 100, explore: 0.1)
+    
+    let grads = loss.gradients(of: optimizer.model.parameters)
+    optimizer.update(along: grads)
     
     lossSum += loss.item / 100
     avgPathLen += Float(stateSequence.count) / 100
@@ -90,7 +90,7 @@ while true {
     let world = World(width: width, height: height, exit: (0, 0), obstacles: obstacles)
     
     let initialState = State(world: world, agentPosition: (Int.random(in: 0 ..< world.width), Int.random(in: 0 ..< world.height)))
-    let (stateSequence, _) = run(model: model, from: initialState, decay: 0.9, maxSteps: 100, explore: 0.0)
+    let (stateSequence, _) = run(model: optimizer.model, from: initialState, decay: 0.9, maxSteps: 100, explore: 0.0)
     
     printPath(stateSequence, delay: 0.5)
     sleep(2)

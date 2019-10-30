@@ -117,6 +117,7 @@ enum Action: Int, Hashable {
 
 struct State {
     var world: World
+    var steps = 0
     var agentPosition: (Int, Int)
     
     var isCompleted: Bool {
@@ -125,7 +126,7 @@ struct State {
     
     func reward(for action: Action) -> Float {
         let (x, y) = action.apply(to: agentPosition)
-        
+
         if !(0 ..< world.width ~= x) || !(0 ..< world.height ~= y) {
             return -10
         }
@@ -147,7 +148,7 @@ struct State {
         if world.tiles[y2][x2] == .obstacle {
             return self
         }
-        return State(world: world, agentPosition: (x2, y2))
+        return State(world: world, steps: steps + 1, agentPosition: (x2, y2))
     }
 }
 
